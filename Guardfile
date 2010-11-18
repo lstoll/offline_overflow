@@ -5,5 +5,5 @@ guard 'coffeescript', :output => 'app/_attachments/js/compiled' do
 end
 
 guard 'shell' do
-  watch('app/(.*)') {|m| `cd app && couchapp push` }
+  watch('app/(.*).(js|mustache|html)') {|m| `cd app && couchapp push` }
 end
