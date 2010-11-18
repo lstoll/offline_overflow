@@ -18,6 +18,9 @@ class SearchResultSet extends Backbone.Collection
   parse: (resp) ->
     row.doc for row in resp.rows
 
+  comparator: (post) ->
+    -1 * parseInt(post.get('Score'))
+
   search: (query, options) ->
     @query = query
     @url = "../../_fti/_design/app/ranked_posts?q=#{query}&include_docs=true"
@@ -70,7 +73,7 @@ class PostView extends Backbone.View
 
   template: '''
             <h1>{{Title}}</h1>
-            {{{Body}}}
+            <h2>Score {{Score}}</h2>
             '''
 
   render: ->
