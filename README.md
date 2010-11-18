@@ -10,3 +10,4 @@ Requirements
 * CoucbDB Lucene ~0.5
 * Couchapp ~0.7.1
 * Ruby + libxml gem (Importing only)
+* guard, guard-coffeescript, guard-shell gems for auto compiling and push
