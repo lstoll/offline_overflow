@@ -15,16 +15,14 @@ class PostView extends Backbone.View
 class SearchResultSet extends Backbone.Collection
   model: Post
 
-  fakeResults:
-    'foo': [ { title: "Foo", body: "Foo" } ]
-    'bar': [ { title: "Bar", body: "Bar" } ]
+  parse: (resp) ->
+    row.doc for row in resp.rows
 
   search: (query, options) ->
     @query = query
-    @url = "/search/#{query}"
+    @url = "../../_fti/_design/app/ranked_posts?q=#{query}&include_docs=true"
     this.trigger 'query', query
-    this.refresh(@fakeResults[query] || [])
-    #this.fetch()
+    this.fetch()
 
 window.SearchResults = new SearchResultSet
 
@@ -71,8 +69,8 @@ class PostView extends Backbone.View
   className: 'post'
 
   template: '''
-            <h1>{{title}}</h1>
-            {{body}}
+            <h1>{{Title}}</h1>
+            {{{Body}}}
             '''
 
   render: ->
