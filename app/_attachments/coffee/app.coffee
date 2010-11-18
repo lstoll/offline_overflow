@@ -1,4 +1,6 @@
 class Post extends Backbone.Model
+  url: ->
+    "../../#{this.get '_id'}"
 
 class PostView extends Backbone.View
   tagName: 'article'
@@ -16,7 +18,7 @@ class SearchResultSet extends Backbone.Collection
   model: Post
 
   parse: (resp) ->
-    row.doc for row in resp.rows
+    _(row.doc).extend(id: row.id) for row in resp.rows
 
   comparator: (post) ->
     -1 * parseInt(post.get('Score'))
@@ -53,27 +55,55 @@ class SearchView extends Backbone.View
 class SearchResultsView extends Backbone.View
   el: $("#results")
 
+  template: '''
+            {{#posts}}
+              <article id="{{_id}}">
+                <a href="#show/{{_id}}">
+                  <h1>{{Title}}</h1>
+                  <h2>Score {{Score}}</h2>
+                </a>
+              </article>
+            {{/posts}}
+            '''
+
+  loadingTemplate: '<img src="ajax-loader.gif" class="loading">'
+
   initialize: ->
     SearchResults.bind 'query', => this.$(".loading").show()
     SearchResults.bind 'refresh', => this.render()
 
-  render: ->
-    this.$(".post").remove()
-    this.$(".loading").hide()
-    SearchResults.each (post) => this.addResult post
-    this
+  render: (loading) ->
+    if loading
+      $(this.el).html @loadingTemplate
+    else
+      $(this.el).html Mustache.to_html(@template, { posts: SearchResults.toJSON() })
 
-  addResult: (post) ->
-    view = new PostView(model: post)
-    $(this.el).append(view.render().el)
+    this
 
 class PostView extends Backbone.View
   tagName: 'article'
-  className: 'post'
+  className: 'full'
 
   template: '''
-            <h1>{{Title}}</h1>
-            <h2>Score {{Score}}</h2>
+            <header>
+              <h1>{{Title}}</h1>
+            </header>
+            <section class="question">
+              {{{Body}}}
+              <ul class="comments">
+                {{#comments}}<li>{{Text}}</li>{{/comments}}
+              </ul>
+            </section>
+            <ul class="answers">
+              {{#answers}}
+                <li>
+                  {{{Body}}}
+                  <ul class="comments">
+                    {{#comments}}<li>{{Text}}</li>{{/comments}}
+                  </ul>
+                </li>
+              {{/answers}}
+            </ul>
             '''
 
   render: ->
@@ -90,6 +120,14 @@ class OfflineOverflow extends Backbone.Controller
     SearchResults.search query
 
   show: (post_id) ->
+    this.saveLocation "show/#{post_id}"
+    model = SearchResults.get(post_id)
+    unless model?
+      model = new Post({_id: post_id})
+      model.fetch()
+    view = new PostView(model: model)
+    $("#main > article.full").remove()
+    $("#main").append view.render().el
 
 $(document).ready ->
   window.controller = new OfflineOverflow()
