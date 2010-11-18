@@ -15,12 +15,16 @@ class PostView extends Backbone.View
 class SearchResultSet extends Backbone.Collection
   model: Post
 
+  fakeResults:
+    'foo': [ { title: "Foo", body: "Foo" } ]
+    'bar': [ { title: "Bar", body: "Bar" } ]
+
   search: (query, options) ->
     @query = query
     @url = "/search/#{query}"
     this.trigger 'query', query
-    #this.trigger "refresh", []
-    this.fetch()
+    this.refresh(@fakeResults[query] || [])
+    #this.fetch()
 
 window.SearchResults = new SearchResultSet
 
@@ -41,11 +45,13 @@ class SearchView extends Backbone.View
 
   render: ->
     this.$("input[type=search]").val SearchResults.query
+    Backbone.history.saveLocation "/search/#{SearchResults.query}"
     this
 
   search: (event) ->
-    SearchResults.search this.$("input[type=search]").getValue()
+    SearchResults.search this.$("input[type=search]").val()
     event.preventDefault()
+    false
 
 class SearchResultsView extends Backbone.View
   el: $("#results")
@@ -54,12 +60,26 @@ class SearchResultsView extends Backbone.View
     SearchResults.bind 'refresh', => this.render()
 
   render: ->
-    console.log 'rendering results'
+    $(this.el).html("")
+    SearchResults.each (post) => this.addResult post
     this
+
+  addResult: (post) ->
+    view = new PostView(model: post)
+    $(this.el).append(view.render().el)
 
 class PostView extends Backbone.View
   tagName: 'article'
   className: 'post'
+
+  template: '''
+            <h1>{{title}}</h1>
+            {{body}}
+            '''
+
+  render: ->
+    $(this.el).html Mustache.to_html(@template, @model.toJSON())
+    this
 
 class OfflineOverflow extends Backbone.Controller
   routes:
