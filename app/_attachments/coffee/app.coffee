@@ -36,12 +36,8 @@ class SearchView extends Backbone.View
 
   initialize: ->
     _.bindAll this, 'search'
-    SearchResults.bind 'query', =>
-      this.render()
-      this.$(".loading").show()
-    SearchResults.bind 'refresh', =>
-      this.render()
-      this.$(".loading").hide()
+    SearchResults.bind 'query', => this.render()
+    SearchResults.bind 'refresh', => this.render()
 
   render: ->
     this.$("input[type=search]").val SearchResults.query
@@ -57,10 +53,12 @@ class SearchResultsView extends Backbone.View
   el: $("#results")
 
   initialize: ->
+    SearchResults.bind 'query', => this.$(".loading").show()
     SearchResults.bind 'refresh', => this.render()
 
   render: ->
-    $(this.el).html("")
+    this.$(".post").remove()
+    this.$(".loading").hide()
     SearchResults.each (post) => this.addResult post
     this
 
