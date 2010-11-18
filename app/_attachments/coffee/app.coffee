@@ -45,7 +45,7 @@ class SearchView extends Backbone.View
 
   render: ->
     this.$("input[type=search]").val SearchResults.query
-    Backbone.history.saveLocation "/search/#{SearchResults.query}"
+    Backbone.history.saveLocation "search/#{SearchResults.query}"
     this
 
   search: (event) ->
@@ -85,16 +85,12 @@ class OfflineOverflow extends Backbone.Controller
   routes:
     'search/:query': 'search'
     'show/:post_id': 'show'
-    '.*': 'home'
 
   search: (query) ->
     this.saveLocation "search/#{query}"
     SearchResults.search query
 
   show: (post_id) ->
-
-  home: ->
-    this.saveLocation ""
 
 $(document).ready ->
   window.controller = new OfflineOverflow()
