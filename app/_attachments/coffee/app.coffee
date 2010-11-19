@@ -7,7 +7,7 @@ class PostView extends Backbone.View
   className: 'post'
 
   template: '''
-            <h1>{{title}}</h1>
+            <h3>{{title}}</h3>
             {{body}}
             '''
 
@@ -59,8 +59,8 @@ class SearchResultsView extends Backbone.View
             {{#posts}}
               <article id="{{_id}}">
                 <a href="#show/{{_id}}">
-                  <h1>{{Title}}</h1>
-                  <h2>Score {{Score}}</h2>
+                  <h3>{{Title}}</h3>
+                  <h4>Score {{Score}}</h4>
                 </a>
               </article>
             {{/posts}}
@@ -85,7 +85,7 @@ class PostView extends Backbone.View
 
   template: '''
             <header>
-              <h1>{{Title}}</h1>
+              <h3>{{Title}}</h3>
             </header>
             <section class="question">
               {{{Body}}}
