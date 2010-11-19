@@ -219,10 +219,6 @@ button {  width: auto; overflow: visible; }
   margin: 0 auto;
 }
 
-#container > header {
-  text-align: center;
-}
-
 #search, #results {
   margin-right: 40em;
 }
