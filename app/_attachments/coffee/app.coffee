@@ -82,7 +82,6 @@ class SearchResultsView extends Backbone.View
 
 class PostView extends Backbone.View
   tagName: 'article'
-  className: 'full'
 
   template: '''
             <header>
@@ -126,8 +125,8 @@ class OfflineOverflow extends Backbone.Controller
       model = new Post({_id: post_id})
       model.fetch()
     view = new PostView(model: model)
-    $("#main > article.full").remove()
-    $("#main").append view.render().el
+    $("#main > article").remove()
+    $("#main").prepend view.render().el
 
 $(document).ready ->
   window.controller = new OfflineOverflow()

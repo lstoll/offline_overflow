@@ -213,13 +213,12 @@ button {  width: auto; overflow: visible; }
  */
 
 #container {
-  width: 38em;
+  width: 80em;
   margin: 0 auto;
 }
 
 #container > header {
-  float: left;
-  width: 12.67em;
+  text-align: center;
 }
 
 #container > header h1 {
@@ -232,18 +231,24 @@ button {  width: auto; overflow: visible; }
   font-weight: 200;
 }
 
+#search, #results {
+  margin-right: 40em;
+}
+
+#main > article {
+  float: right;
+  width: 38em;
+}
+
 #search {
-  margin-left: 12.67em;
-  text-align: right;
   padding-top: 2em;
   position: relative;
 }
 
 input[type=search] {
-  width: 19em;
 }
 
-article {
+#results article {
   margin-top: 1em;
   font-weight: 200;
 }
@@ -252,8 +257,6 @@ article h1 {
   font-size: 138.5%;
   font-weight: normal;
 }
-
-
 
 
 
