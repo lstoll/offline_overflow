@@ -1,139 +1,130 @@
 class Post extends Backbone.Model
   url: ->
-    "../../#{this.get '_id'}"
+    "../../#{this.id}"
 
-class PostView extends Backbone.View
-  tagName: 'article'
-  className: 'post'
+class SearchResult extends Backbone.Model
+  initialize: ->
+    this.post = new Post(id: this.postId())
 
-  template: '''
-            <h3>{{title}}</h3>
-            {{body}}
-            '''
+  hasParentId: ->
+    false
 
-  render: ->
-    $(this.el).html Mustache.to_html(@template, @model)
+  postId: ->
+    if this.hasParentId()
+      this.get('doc').parentId
+    else
+      this.id
 
-class SearchResultSet extends Backbone.Collection
-  model: Post
+class SearchResults extends Backbone.Collection
+  model: SearchResult
 
-  parse: (resp) ->
-    _(row.doc).extend(id: row.id) for row in resp.rows
+  parse: (data) ->
+    data.rows
 
-  comparator: (post) ->
-    -1 * parseInt(post.get('Score'))
-
-  search: (query, options) ->
-    @query = query
-    @url = "../../_fti/_design/app/ranked_posts?q=#{query}&include_docs=true"
-    this.trigger 'query', query
+  search: (query) ->
+    this.url = "../../_fti/_design/app/ranked_posts?q=#{query}&include_docs=true"
     this.fetch()
 
-window.SearchResults = new SearchResultSet
+  comparator: (result) ->
+    -1 * parseInt(result.get('score'))
 
-class SearchView extends Backbone.View
-  el: $("#search")
+class HomeView extends Backbone.View
+  template: '''
+            <form>
+              <input type="search">
+              <button type="submit">Search</button>
+            </form>
+            '''
 
   events:
     'submit form': 'search'
 
-  initialize: ->
-    _.bindAll this, 'search'
-    SearchResults.bind 'query', => this.render()
-    SearchResults.bind 'refresh', => this.render()
-
   render: ->
-    this.$("input[type=search]").val SearchResults.query
-    Backbone.history.saveLocation "search/#{SearchResults.query}"
+    $(this.el).html(Mustache.to_html(this.template))
     this
 
-  search: (event) ->
-    SearchResults.search this.$("input[type=search]").val()
-    event.preventDefault()
+  searchQuery: ->
+    this.$("input[type=search]").val()
+
+  search: ->
+    Backbone.history.saveLocation "search/#{this.searchQuery()}"
     false
 
 class SearchResultsView extends Backbone.View
-  el: $("#results")
-
-  template: '''
-            {{#posts}}
-              <article id="{{_id}}">
-                <a href="#show/{{_id}}">
-                  <h3>{{Title}}</h3>
-                  <h4>Score {{Score}}</h4>
-                </a>
-              </article>
-            {{/posts}}
-            '''
-
-  loadingTemplate: '<img src="ajax-loader.gif" class="loading">'
+  className: 'results'
 
   initialize: ->
-    SearchResults.bind 'query', => this.$(".loading").show()
-    SearchResults.bind 'refresh', => this.render()
+    this.collection.bind "refresh", => this.render()
 
-  render: (loading) ->
-    if loading
-      $(this.el).html @loadingTemplate
-    else
-      $(this.el).html Mustache.to_html(@template, { posts: SearchResults.toJSON() })
-
+  render: ->
+    this.collection.each (result) =>
+      $(this.el).append(new SearchResultView(model: result).render().el)
     this
+
+class SearchResultView extends Backbone.View
+  tagName: 'article'
+
+  template: '''
+            <h1>{{Title}}</h1>
+            <p class="exerpt">{{{Body}}}</p>
+            '''
+
+  events:
+    'click h1': 'select'
+
+  initialize: ->
+    this.model.bind 'postLoaded', 'render'
+
+  render: ->
+    $(this.el).html(Mustache.to_html(this.template, this.model.get('doc')))
+    this
+
+  select: ->
+    Backbone.history.saveLocation("posts/#{this.model.postId()}")
+
+window.SearchResults = new SearchResults()
 
 class PostView extends Backbone.View
   tagName: 'article'
 
   template: '''
-            <header>
-              <h3>{{Title}}</h3>
-            </header>
-            <section class="question">
-              {{{Body}}}
-              <ul class="comments">
-                {{#comments}}<li>{{Text}}</li>{{/comments}}
-              </ul>
-            </section>
-            <ul class="answers">
-              {{#answers}}
-                <li>
-                  {{{Body}}}
-                  <ul class="comments">
-                    {{#comments}}<li>{{Text}}</li>{{/comments}}
-                  </ul>
-                </li>
-              {{/answers}}
-            </ul>
+            <h1>{{Title}}</h1>
+            {{{Body}}}
             '''
 
+  initialize: ->
+    this.model.bind 'change', => this.render()
+
   render: ->
-    $(this.el).html Mustache.to_html(@template, @model.toJSON())
+    $(this.el).html(Mustache.to_html(this.template, this.model.toJSON()))
     this
 
-class OfflineOverflow extends Backbone.Controller
+class StackUnderflow extends Backbone.Controller
+  views: {}
+
   routes:
+    '': 'home'
+    'home': 'home'
     'search/:query': 'search'
-    'show/:post_id': 'show'
+    'posts/:post_id': 'show'
+
+  initialize: ->
+    this.views.home = new HomeView().render()
+    this.views.results = new SearchResultsView(collection: window.SearchResults).render()
+
+  home: ->
+    $("#main").html(this.views.home.el)
 
   search: (query) ->
-    this.saveLocation "search/#{query}"
-    SearchResults.search query
+    window.SearchResults.search query
+    $("#main").html(this.views.results.el)
 
   show: (post_id) ->
-    this.saveLocation "show/#{post_id}"
-    model = SearchResults.get(post_id)
-    unless model?
-      model = new Post({_id: post_id})
-      model.fetch()
-    view = new PostView(model: model)
-    $("#main > article").remove()
-    $("#main").prepend view.render().el
+    console.log post_id
+    post = new Post(id: post_id)
+    $("#main").html(new PostView(model: post).render().el)
+    post.fetch()
 
 $(document).ready ->
-  window.controller = new OfflineOverflow()
+  window.controller = new StackUnderflow()
   Backbone.history.start()
-
-  search = new SearchView().render()
-  results = new SearchResultsView().render()
-  $("#main").append search
-  $("#main").append results
-
